@@ -1,0 +1,48 @@
+package org.example;
+
+import io.vertx.core.Vertx;
+import io.vertx.redis.client.*;
+import io.vertx.redis.client.impl.RedisClusterClient;
+
+import java.util.Arrays;
+
+import static io.vertx.redis.client.Redis.createClient;
+
+/**
+ * Hello world!
+ *
+ */
+
+public class App 
+{
+    public static void main( String[] args )
+    {
+        final RedisOptions options = new RedisOptions().setType(RedisClientType.CLUSTER)
+                .addConnectionString("redis://127.0.0.1:30001")
+                .addConnectionString("redis://127.0.0.1:30002")
+                .addConnectionString("redis://127.0.0.1:30003")
+                .addConnectionString("redis://127.0.0.1:30004")
+                .addConnectionString("redis://127.0.0.1:30005")
+                .addConnectionString("redis://127.0.0.1:30006");
+
+        Vertx vertx = Vertx.vertx();
+        Redis client =  Redis.createClient(vertx,options);
+        RedisAPI redis = RedisAPI.api(client);
+
+        client.connect()
+                .compose(conn ->
+                        redis.set(Arrays.asList("name", "value"))
+                                .compose(v -> {
+                                    System.out.println("key stored");
+                                    return redis.get("key");
+                                }))
+                .onSuccess(result -> {
+                    System.out.println("Retrieved value: " + result);
+                })
+                .onFailure(err -> {
+                    System.out.println("Connection or Operation Failed " + err);
+                });
+
+
+    }
+}
